@@ -15,14 +15,14 @@ unicase = "^2.8"
 base64 = "^0.22.1"
 zeroize = { version = "^1.8.1", features = ["zeroize_derive"] }
 native-tls = { version = "^0.2", optional = true }
-rustls = { version = "^0.23", optional = true }
+rustls = { version = "^0.23", optional = true, default-features = false, features=["ring", "std"] }
 rustls-pemfile = { version = "^2.2", optional = true }
 rustls-pki-types = { version = "^1.10", features = ["alloc"], optional = true }
 webpki = { version = "^0.22", optional = true }
 webpki-roots = { version = "^0.26", optional = true }
 
 [features]
-default = ["native-tls"]
+default = ["rust-tls"]
 rust-tls = [
     "rustls",
     "rustls-pki-types",
