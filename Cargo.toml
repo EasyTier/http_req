@@ -20,6 +20,8 @@ rustls-pemfile = { version = "^2.2", optional = true }
 rustls-pki-types = { version = "^1.10", features = ["alloc"], optional = true }
 webpki = { version = "^0.22", optional = true }
 webpki-roots = { version = "^0.26", optional = true }
+rand = "0.8.5"
+
 
 [features]
 default = ["rust-tls"]

@@ -1,4 +1,6 @@
 //! TCP stream
+use rand::seq::SliceRandom;
+
 use crate::{
     error::{Error, ParseErr},
     tls::{self, Conn},
@@ -8,6 +10,7 @@ use crate::{
 use std::{
     io::{self, BufRead, Read, Write},
     net::{TcpStream, ToSocketAddrs},
+    ops::Div as _,
     path::Path,
     sync::mpsc::{Receiver, RecvTimeoutError, Sender},
     time::{Duration, Instant},
@@ -201,11 +204,24 @@ where
 {
     let host = host.as_ref();
     let timeout = Duration::from(timeout);
-    let addrs: Vec<_> = (host, port).to_socket_addrs()?.collect();
+    let mut addrs = (host, port).to_socket_addrs()?.collect::<Vec<_>>();
+    addrs.shuffle(&mut rand::thread_rng());
+
+    let (ipv4, ipv6) = addrs
+        .into_iter()
+        .fold((None, None), |(mut ipv4, mut ipv6), addr| {
+            if addr.is_ipv4() && ipv4.is_none() {
+                ipv4 = Some(addr);
+            } else if addr.is_ipv6() && ipv6.is_none() {
+                ipv6 = Some(addr);
+            }
+            (ipv4, ipv6)
+        });
+    let addrs: Vec<_> = ipv4.into_iter().chain(ipv6.into_iter()).collect();
     let count = addrs.len();
 
     for (idx, addr) in addrs.into_iter().enumerate() {
-        match TcpStream::connect_timeout(&addr, timeout) {
+        match TcpStream::connect_timeout(&addr, timeout.div(count as u32)) {
             Ok(stream) => return Ok(stream),
             Err(err) => match err.kind() {
                 io::ErrorKind::TimedOut => return Err(err),
